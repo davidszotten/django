@@ -31,6 +31,12 @@ class CustomizableView(SimpleView):
     parameter = {}
 
 
+class AnnotatedView(View):
+    value_only = None
+    annotation_only: str
+    value_and_annotation: str = ''
+
+
 def decorator(view):
     view.is_decorated = True
     return view
@@ -149,11 +155,26 @@ class ViewTest(SimpleTestCase):
         # ...but raises errors otherwise.
         msg = (
             "CustomizableView() received an invalid keyword 'foobar'. "
-            "as_view only accepts arguments that are already attributes of "
-            "the class."
+            "as_view only accepts arguments that are attributes of, "
+            "or annotations on the class."
         )
         with self.assertRaisesMessage(TypeError, msg):
             CustomizableView.as_view(foobar="value")
+
+    def test_keyword_arguments_for_annotations(self):
+        """
+        View arguments for unvalued annotations are allowed and required.
+        """
+
+        AnnotatedView.as_view(annotation_only="other")
+        AnnotatedView.as_view(value_and_annotation="value", annotation_only="other")
+
+        msg = (
+            "AnnotatedView() is missing a keyword for the following "
+            "annotation(s) that don't have default value(s): annotation_only"
+        )
+        with self.assertRaisesMessage(TypeError, msg):
+            AnnotatedView.as_view()
 
     def test_calling_more_than_once(self):
         """
